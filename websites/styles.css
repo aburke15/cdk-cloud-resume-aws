@@ -1,3 +1,9 @@
 .something-is-red {
   color: red;
 }
+
+.the-body {
+  width: 70%;
+  margin-left: auto;
+  margin-right: auto;
+}
