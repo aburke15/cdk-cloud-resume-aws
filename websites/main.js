@@ -5,7 +5,7 @@ window.onload = async () => {
 
 const pageVisitCountName = 'pageVisitCount';
 
-const getPageVisitCountFromLambda = () => {
+const getPageVisitCountFromLambda = async () => {
   // TODO: implement, call lambda function to get the page visit count
   // const url = 'https://some-url.from.amazon.com';
   // const response = await fetch(url);
@@ -14,10 +14,7 @@ const getPageVisitCountFromLambda = () => {
 };
 
 const getPageVisitCount = () => {
-  if (localStorage.getItem(pageVisitCountName) === null) {
-    localStorage.setItem(pageVisitCountName, 0);
-  }
-
+  setPageVisitCountIfNotExists();
   updatePageVisitCount();
 
   return new Promise((resolve, reject) => {
@@ -30,6 +27,12 @@ const getPageVisitCount = () => {
       }
     }, 200);
   });
+};
+
+const setPageVisitCountIfNotExists = () => {
+  if (localStorage.getItem(pageVisitCountName) === null) {
+    localStorage.setItem(pageVisitCountName, 0);
+  }
 };
 
 const updatePageVisitCount = () => {
