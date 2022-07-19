@@ -30,6 +30,10 @@ export class CdkCloudResumeAwsStack extends Stack {
 
     const api = new LambdaRestApi(this, 'CloudResumeApi', {
       handler: handler,
+      proxy: false,
     });
+
+    const count = api.root.addResource('count');
+    count.addMethod('GET');
   }
 }
