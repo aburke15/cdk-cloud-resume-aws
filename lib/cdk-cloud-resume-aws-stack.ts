@@ -28,7 +28,7 @@ export class CdkCloudResumeAwsStack extends Stack {
       timeout: Duration.minutes(2),
     });
 
-    new LambdaRestApi(this, 'CloudResumeApi', {
+    const api = new LambdaRestApi(this, 'CloudResumeApi', {
       handler: handler,
     });
   }
