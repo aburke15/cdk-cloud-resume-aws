@@ -7,6 +7,11 @@ import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
 
+const memoryAndTimeout = {
+  memorySize: 128,
+  timeout: Duration.minutes(2),
+} as const;
+
 export class CdkCloudResumeAwsStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
@@ -29,12 +34,15 @@ export class CdkCloudResumeAwsStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    const handler = new NodejsFunction(this, 'CloudResumeHandler', {
+    const folder = 'lambda';
+    const handlerName = 'handler';
+
+    const pageVistReadHandler = new NodejsFunction(this, 'PageVisitReadHandler', {
       runtime: Runtime.NODEJS_14_X,
-      memorySize: 128,
-      timeout: Duration.minutes(2),
-      entry: Code.fromAsset('lambda').path + '/cloud-resume-handler.ts',
-      handler: 'handler',
+      memorySize: memoryAndTimeout.memorySize,
+      timeout: memoryAndTimeout.timeout,
+      entry: Code.fromAsset(folder).path + '/page-visit-read-handler.ts',
+      handler: handlerName,
       bundling: {
         externalModules: ['aws-sdk'],
         minify: true,
@@ -44,10 +52,28 @@ export class CdkCloudResumeAwsStack extends Stack {
       },
     });
 
-    table.grantReadWriteData(handler);
+    const pageVistIncrementHandler = new NodejsFunction(this, 'PageVisitIncrementHandler', {
+      runtime: Runtime.NODEJS_14_X,
+      memorySize: memoryAndTimeout.memorySize,
+      timeout: memoryAndTimeout.timeout,
+      entry: Code.fromAsset(folder).path + '/page-visit-increment-handler.ts',
+      handler: handlerName,
+      bundling: {
+        externalModules: ['aws-sdk'],
+        minify: true,
+      },
+      environment: {
+        TABLE_NAME: table.tableName,
+        DOWNSTREAM: pageVistReadHandler.functionName,
+      },
+    });
+
+    pageVistReadHandler.grantInvoke(pageVistIncrementHandler);
+    table.grantReadWriteData(pageVistIncrementHandler);
+    table.grantReadData(pageVistReadHandler);
 
     const api = new LambdaRestApi(this, 'CloudResumeApi', {
-      handler: handler,
+      handler: pageVistIncrementHandler,
       proxy: false,
     });
 
