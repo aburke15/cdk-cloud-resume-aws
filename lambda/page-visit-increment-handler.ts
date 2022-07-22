@@ -6,10 +6,17 @@ AWS.config.update({ region: 'us-west-2' });
 
 const apiVersion = { apiVersion: '2012-08-10' };
 let ddb = new DynamoDB(apiVersion);
-let lambda = new AWS.Lambda({ region: 'us-west-2' });
+let lambda = new AWS.Lambda();
+
+const headers = {
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET',
+};
 
 exports.handler = async (event: APIGatewayEvent) => {
-  console.log(JSON.stringify('request: ' + event, null, 2));
+  console.log(JSON.stringify(event, null, 2));
+
   if (!ddb) {
     ddb = new DynamoDB(apiVersion);
   }
@@ -39,7 +46,7 @@ exports.handler = async (event: APIGatewayEvent) => {
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'text/plain' },
+      headers: headers,
       body: JSON.stringify(response.Payload, null, 2),
     };
   } catch (error) {

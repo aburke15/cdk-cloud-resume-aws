@@ -6,12 +6,18 @@ window.onload = async () => {
 const pageVisitCountName = 'pageVisitCount';
 
 const getPageVisitCountFromLambda = async () => {
-  // TODO: implement, call lambda function to get the page visit count
-  const url = 'https://lgcnoazj0j.execute-api.us-west-2.amazonaws.com/prod/count';
-  const response = await fetch(url);
-  const data = await response.json();
+  try {
+    const url = 'https://5k2y7v67ra.execute-api.us-west-2.amazonaws.com/prod/count';
+    const response = await fetch(url);
 
-  return data.body.count;
+    const json = await response.json();
+    const data = JSON.parse(json);
+
+    return data.body.count;
+  } catch (error) {
+    console.error('Error getPageVisitCountFromLambda:', error);
+    return 0;
+  }
 };
 
 const getPageVisitCount = () => {
