@@ -20,6 +20,7 @@ const getPageVisitCountFromLambda = async () => {
   }
 };
 
+// Local storage access only
 const getPageVisitCount = () => {
   setPageVisitCountIfNotExists();
   updatePageVisitCount();
