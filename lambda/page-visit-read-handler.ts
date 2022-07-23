@@ -6,10 +6,6 @@ import { ScanInput } from 'aws-sdk/clients/dynamodb';
 const apiVersion = { apiVersion: '2012-08-10' };
 let ddb = new DynamoDB(apiVersion);
 
-type CountResponse = {
-  count: number;
-};
-
 exports.handler = async (event: APIGatewayEvent) => {
   console.log(JSON.stringify('request: ' + event, null, 2));
 

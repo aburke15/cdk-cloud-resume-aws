@@ -78,6 +78,11 @@ export class CdkCloudResumeAwsStack extends Stack {
     });
 
     const count = api.root.addResource('count');
+
     count.addMethod('GET');
+    count.addCorsPreflight({
+      allowOrigins: ['*'],
+      allowMethods: ['ANY'],
+    });
   }
 }
