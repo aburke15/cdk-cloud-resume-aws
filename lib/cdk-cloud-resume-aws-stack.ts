@@ -23,7 +23,7 @@ export class CdkCloudResumeAwsStack extends Stack {
       autoDeleteObjects: true,
     });
 
-    new BucketDeployment(this, 'CloudResumeBucketDeployment', {
+    const deployment = new BucketDeployment(this, 'CloudResumeBucketDeployment', {
       sources: [Source.asset('./websites')],
       destinationBucket: bucket,
     });

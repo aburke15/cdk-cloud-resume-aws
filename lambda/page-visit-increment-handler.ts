@@ -17,17 +17,17 @@ const headers = {
 exports.handler = async (event: APIGatewayEvent) => {
   console.log(JSON.stringify(event, null, 2));
 
-  if (!ddb) {
-    ddb = new DynamoDB(apiVersion);
-  }
-  if (!lambda) {
-    lambda = new Lambda();
-  }
-
-  const tableName: string = process.env.TABLE_NAME ?? 'N/A';
-  const functionName: string = process.env.DOWNSTREAM ?? 'N/A';
-
   try {
+    if (!ddb) {
+      ddb = new DynamoDB(apiVersion);
+    }
+    if (!lambda) {
+      lambda = new Lambda();
+    }
+
+    const tableName: string = process.env.TABLE_NAME as string;
+    const functionName: string = process.env.DOWNSTREAM as string;
+
     await ddb
       .updateItem({
         TableName: tableName,
