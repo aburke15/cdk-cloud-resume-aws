@@ -6,25 +6,34 @@ import { ScanInput } from 'aws-sdk/clients/dynamodb';
 const apiVersion = { apiVersion: '2012-08-10' };
 let ddb = new DynamoDB(apiVersion);
 
+type PageVisitCountResponse = {
+  count: number;
+};
+
 exports.handler = async (event: APIGatewayEvent) => {
-  console.log(JSON.stringify('request: ' + event, null, 2));
+  console.log(JSON.stringify(event, null, 2));
 
-  if (!ddb) {
-    ddb = new DynamoDB(apiVersion);
+  try {
+    if (!ddb) {
+      ddb = new DynamoDB(apiVersion);
+    }
+
+    const result = await readFromDynamoDB(ddb);
+    const response: PageVisitCountResponse = { count: 0 };
+
+    result?.Items?.forEach((item) => {
+      response.count = parseInt(item.visit_count.N ?? '1');
+    });
+
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'text/plain' },
+      body: response,
+    };
+  } catch (error) {
+    console.log(error);
+    throw error;
   }
-
-  const result = await readFromDynamoDB(ddb);
-  const response = { count: 0 };
-
-  result?.Items?.forEach((item) => {
-    response.count = parseInt(item.visit_count.N ?? '1');
-  });
-
-  return {
-    statusCode: 200,
-    headers: { 'Content-Type': 'text/plain' },
-    body: response,
-  };
 };
 
 const readFromDynamoDB = (ddb: DynamoDB) => {
