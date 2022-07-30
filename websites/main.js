@@ -7,6 +7,7 @@ const pageVisitCountName = 'pageVisitCount';
 
 const getPageVisitCountFromLambda = async () => {
   try {
+    // TODO: put this url behind a dns record
     const url = 'https://5k2y7v67ra.execute-api.us-west-2.amazonaws.com/prod/count';
     const response = await fetch(url);
 
