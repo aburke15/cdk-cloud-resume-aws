@@ -1,32 +1,32 @@
-import AWS = require('aws-sdk');
-import { DynamoDB, Lambda } from 'aws-sdk';
+import * as AWS from 'aws-sdk';
 import { APIGatewayEvent } from 'aws-lambda';
+import { FunctionResponse } from './responses';
 
 AWS.config.update({ region: 'us-west-2' });
-
 const apiVersion = { apiVersion: '2012-08-10' };
-let ddb = new DynamoDB(apiVersion);
+
+let ddb = new AWS.DynamoDB(apiVersion);
 let lambda = new AWS.Lambda();
 
 const headers = {
   'Access-Control-Allow-Headers': 'Content-Type',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET',
-};
+} as const;
+
+const tableName: string = process.env.TABLE_NAME as string;
+const functionName: string = process.env.DOWNSTREAM as string;
 
 exports.handler = async (event: APIGatewayEvent) => {
   console.log(JSON.stringify(event, null, 2));
 
   try {
     if (!ddb) {
-      ddb = new DynamoDB(apiVersion);
+      ddb = new AWS.DynamoDB(apiVersion);
     }
     if (!lambda) {
-      lambda = new Lambda();
+      lambda = new AWS.Lambda();
     }
-
-    const tableName: string = process.env.TABLE_NAME as string;
-    const functionName: string = process.env.DOWNSTREAM as string;
 
     await ddb
       .updateItem({
@@ -47,14 +47,10 @@ exports.handler = async (event: APIGatewayEvent) => {
     return {
       statusCode: 200,
       headers: headers,
-      body: JSON.stringify(response.Payload, null, 2),
-    };
+      body: JSON.stringify(response?.Payload, null, 2),
+    } as FunctionResponse<string>;
   } catch (error) {
-    console.error('Error:', error);
-    return {
-      statusCode: 400,
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(error, null, 2),
-    };
+    console.error(error);
+    throw error;
   }
 };
