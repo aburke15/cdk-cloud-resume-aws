@@ -1,13 +1,13 @@
+import * as AWS from 'aws-sdk';
 import { APIGatewayEvent } from 'aws-lambda';
-
-import { DynamoDB } from 'aws-sdk';
-import { ScanInput } from 'aws-sdk/clients/dynamodb';
+import * as Response from './responses';
 
 const apiVersion = { apiVersion: '2012-08-10' };
-let ddb = new DynamoDB(apiVersion);
+let ddb = new AWS.DynamoDB(apiVersion);
 
-type PageVisitCountResponse = {
-  count: number;
+const tableName: string = process.env.TABLE_NAME as string;
+const params: AWS.DynamoDB.ScanInput = {
+  TableName: tableName,
 };
 
 exports.handler = async (event: APIGatewayEvent) => {
@@ -15,11 +15,11 @@ exports.handler = async (event: APIGatewayEvent) => {
 
   try {
     if (!ddb) {
-      ddb = new DynamoDB(apiVersion);
+      ddb = new AWS.DynamoDB(apiVersion);
     }
 
     const result = await readFromDynamoDB(ddb);
-    const response: PageVisitCountResponse = { count: 0 };
+    const response: Response.PageVisitCountResponse = { count: 0 };
 
     result?.Items?.forEach((item) => {
       response.count = parseInt(item.visit_count.N ?? '1');
@@ -29,18 +29,13 @@ exports.handler = async (event: APIGatewayEvent) => {
       statusCode: 200,
       headers: { 'Content-Type': 'text/plain' },
       body: response,
-    };
+    } as Response.FunctionResponse<Response.PageVisitCountResponse>;
   } catch (error) {
     console.log(error);
     throw error;
   }
 };
 
-const readFromDynamoDB = (ddb: DynamoDB) => {
-  const tableName: string = process.env.TABLE_NAME ?? 'N/A';
-  const params: ScanInput = {
-    TableName: tableName,
-  };
-
+const readFromDynamoDB = (ddb: AWS.DynamoDB) => {
   return ddb.scan(params).promise();
 };

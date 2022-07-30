@@ -1,54 +1,57 @@
-import { Duration, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
+import * as CDK from 'aws-cdk-lib';
 import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
-import { AttributeType, BillingMode, Table } from 'aws-cdk-lib/aws-dynamodb';
+import * as DDB from 'aws-cdk-lib/aws-dynamodb';
 import { Code, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
+import * as Options from './options';
 
-const memoryAndTimeout = {
+const memoryAndTimeout: Options.MemoryAndTimeoutOptions = {
   memorySize: 128,
-  timeout: Duration.minutes(2),
-} as const;
+  timeout: CDK.Duration.seconds(30),
+};
 
-export class CdkCloudResumeAwsStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+const bundling: Options.BundlingOptions = {
+  externalModules: ['aws-sdk', 'aws-lambda'],
+  minify: true,
+};
+
+const directory = 'lambda';
+const handlerName = 'handler';
+
+export class CdkCloudResumeAwsStack extends CDK.Stack {
+  constructor(scope: Construct, id: string, props?: CDK.StackProps) {
     super(scope, id, props);
 
-    const bucket = new Bucket(this, 'CloudResumeBucket', {
+    const cloudResumeTable = new DDB.Table(this, 'CloudResumeTable', {
+      partitionKey: { name: 'id', type: DDB.AttributeType.NUMBER },
+      billingMode: DDB.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: CDK.RemovalPolicy.DESTROY,
+    });
+
+    const cloudResumeBucket = new Bucket(this, 'CloudResumeBucket', {
       publicReadAccess: true,
-      removalPolicy: RemovalPolicy.DESTROY,
+      removalPolicy: CDK.RemovalPolicy.DESTROY,
       websiteIndexDocument: 'index.html',
       autoDeleteObjects: true,
     });
 
     const deployment = new BucketDeployment(this, 'CloudResumeBucketDeployment', {
       sources: [Source.asset('./websites')],
-      destinationBucket: bucket,
+      destinationBucket: cloudResumeBucket,
     });
-
-    const table = new Table(this, 'CloudResumeTable', {
-      partitionKey: { name: 'id', type: AttributeType.NUMBER },
-      billingMode: BillingMode.PAY_PER_REQUEST,
-      removalPolicy: RemovalPolicy.DESTROY,
-    });
-
-    const folder = 'lambda';
-    const handlerName = 'handler';
 
     const pageVistReadHandler = new NodejsFunction(this, 'PageVisitReadHandler', {
       runtime: Runtime.NODEJS_14_X,
       memorySize: memoryAndTimeout.memorySize,
       timeout: memoryAndTimeout.timeout,
-      entry: Code.fromAsset(folder).path + '/page-visit-read-handler.ts',
+      entry: Code.fromAsset(directory).path + '/page-visit-read-handler.ts',
       handler: handlerName,
-      bundling: {
-        externalModules: ['aws-sdk'],
-        minify: true,
-      },
+      bundling,
       environment: {
-        TABLE_NAME: table.tableName,
+        TABLE_NAME: cloudResumeTable.tableName,
       },
     });
 
@@ -56,21 +59,18 @@ export class CdkCloudResumeAwsStack extends Stack {
       runtime: Runtime.NODEJS_14_X,
       memorySize: memoryAndTimeout.memorySize,
       timeout: memoryAndTimeout.timeout,
-      entry: Code.fromAsset(folder).path + '/page-visit-increment-handler.ts',
+      entry: Code.fromAsset(directory).path + '/page-visit-increment-handler.ts',
       handler: handlerName,
-      bundling: {
-        externalModules: ['aws-sdk'],
-        minify: true,
-      },
+      bundling,
       environment: {
-        TABLE_NAME: table.tableName,
+        TABLE_NAME: cloudResumeTable.tableName,
         DOWNSTREAM: pageVistReadHandler.functionName,
       },
     });
 
     pageVistReadHandler.grantInvoke(pageVistIncrementHandler);
-    table.grantReadWriteData(pageVistIncrementHandler);
-    table.grantReadData(pageVistReadHandler);
+    cloudResumeTable.grantReadWriteData(pageVistIncrementHandler);
+    cloudResumeTable.grantReadData(pageVistReadHandler);
 
     const api = new LambdaRestApi(this, 'CloudResumeApi', {
       handler: pageVistIncrementHandler,
@@ -82,7 +82,7 @@ export class CdkCloudResumeAwsStack extends Stack {
     count.addMethod('GET');
     count.addCorsPreflight({
       allowOrigins: ['*'],
-      allowMethods: ['ANY'],
+      allowMethods: ['GET'],
     });
   }
 }
