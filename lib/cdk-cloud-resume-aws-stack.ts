@@ -6,23 +6,14 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
+import * as Options from './options';
 
-type MemoryAndTimeoutOptions = {
-  readonly memorySize: number;
-  readonly timeout: CDK.Duration;
-};
-
-type BundlingOptions = {
-  readonly externalModules: string[];
-  readonly minify: boolean;
-};
-
-const memoryAndTimeout: MemoryAndTimeoutOptions = {
+const memoryAndTimeout: Options.MemoryAndTimeoutOptions = {
   memorySize: 128,
   timeout: CDK.Duration.seconds(30),
 };
 
-const bundling: BundlingOptions = {
+const bundling: Options.BundlingOptions = {
   externalModules: ['aws-sdk', 'aws-lambda'],
   minify: true,
 };
