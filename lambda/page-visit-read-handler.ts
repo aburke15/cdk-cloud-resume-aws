@@ -1,6 +1,6 @@
 import * as AWS from 'aws-sdk';
 import { APIGatewayEvent } from 'aws-lambda';
-import * as Response from './responses';
+import * as Response from '../lib/common/responses';
 
 const apiVersion = { apiVersion: '2012-08-10' };
 let ddb = new AWS.DynamoDB(apiVersion);

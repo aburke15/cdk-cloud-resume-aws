@@ -1,11 +1,11 @@
 import * as CDK from 'aws-cdk-lib';
 
-export type MemoryAndTimeoutOptions = {
+export interface MemoryAndTimeoutOptions {
   readonly memorySize: number;
   readonly timeout: CDK.Duration;
-};
+}
 
-export type BundlingOptions = {
+export interface BundlingOptions {
   readonly externalModules: string[];
   readonly minify: boolean;
-};
+}
