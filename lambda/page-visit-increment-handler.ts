@@ -1,6 +1,6 @@
 import * as AWS from 'aws-sdk';
 import { APIGatewayEvent } from 'aws-lambda';
-import { FunctionResponse } from './responses';
+import { FunctionResponse } from '../lib/common/responses';
 
 AWS.config.update({ region: 'us-west-2' });
 const apiVersion = { apiVersion: '2012-08-10' };

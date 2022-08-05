@@ -6,7 +6,7 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
-import * as Options from './options';
+import * as Options from './common/options';
 
 const memoryAndTimeout: Options.MemoryAndTimeoutOptions = {
   memorySize: 128,
@@ -18,10 +18,10 @@ const bundling: Options.BundlingOptions = {
   minify: true,
 };
 
-const directory = 'lambda';
-const handlerName = 'handler';
-
 export class CdkCloudResumeAwsStack extends CDK.Stack {
+  private readonly directory = 'lambda';
+  private readonly handler = 'handler';
+
   constructor(scope: Construct, id: string, props?: CDK.StackProps) {
     super(scope, id, props);
 
@@ -47,8 +47,8 @@ export class CdkCloudResumeAwsStack extends CDK.Stack {
       runtime: Runtime.NODEJS_14_X,
       memorySize: memoryAndTimeout.memorySize,
       timeout: memoryAndTimeout.timeout,
-      entry: Code.fromAsset(directory).path + '/page-visit-read-handler.ts',
-      handler: handlerName,
+      entry: Code.fromAsset(this.directory).path + '/page-visit-read-handler.ts',
+      handler: this.handler,
       bundling,
       environment: {
         TABLE_NAME: cloudResumeTable.tableName,
@@ -59,8 +59,8 @@ export class CdkCloudResumeAwsStack extends CDK.Stack {
       runtime: Runtime.NODEJS_14_X,
       memorySize: memoryAndTimeout.memorySize,
       timeout: memoryAndTimeout.timeout,
-      entry: Code.fromAsset(directory).path + '/page-visit-increment-handler.ts',
-      handler: handlerName,
+      entry: Code.fromAsset(this.directory).path + '/page-visit-increment-handler.ts',
+      handler: this.handler,
       bundling,
       environment: {
         TABLE_NAME: cloudResumeTable.tableName,
