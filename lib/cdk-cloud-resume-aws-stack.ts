@@ -88,7 +88,7 @@ export class CdkCloudResumeAwsStack extends CDK.Stack {
       allowMethods: ['GET'],
     });
 
-    new Secret(this, `${this.cloudResume}ApiSecret`, {
+    new Secret(this, `${this.cloudResume}ApiIdSecret`, {
       secretName: `${this.cloudResume}ApiId`,
       secretStringValue: new SecretValue(api.restApiId),
     });
