@@ -1,10 +1,12 @@
 import * as CDK from 'aws-cdk-lib';
+import { SecretValue } from 'aws-cdk-lib';
 import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
 import * as DDB from 'aws-cdk-lib/aws-dynamodb';
 import { Code, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 import * as Options from './common/options';
 
@@ -19,26 +21,27 @@ const bundling: Options.BundlingOptions = {
 };
 
 export class CdkCloudResumeAwsStack extends CDK.Stack {
-  private readonly directory = 'lambda';
-  private readonly handler = 'handler';
+  private readonly directory: string = 'lambda';
+  private readonly handler: string = 'handler';
+  private readonly cloudResume: string = 'CloudResume';
 
   constructor(scope: Construct, id: string, props?: CDK.StackProps) {
     super(scope, id, props);
 
-    const cloudResumeTable = new DDB.Table(this, 'CloudResumeTable', {
+    const cloudResumeTable = new DDB.Table(this, `${this.cloudResume}Table`, {
       partitionKey: { name: 'id', type: DDB.AttributeType.NUMBER },
       billingMode: DDB.BillingMode.PAY_PER_REQUEST,
       removalPolicy: CDK.RemovalPolicy.DESTROY,
     });
 
-    const cloudResumeBucket = new Bucket(this, 'CloudResumeBucket', {
+    const cloudResumeBucket = new Bucket(this, `${this.cloudResume}Bucket`, {
       publicReadAccess: true,
       removalPolicy: CDK.RemovalPolicy.DESTROY,
       websiteIndexDocument: 'index.html',
       autoDeleteObjects: true,
     });
 
-    const deployment = new BucketDeployment(this, 'CloudResumeBucketDeployment', {
+    new BucketDeployment(this, `${this.cloudResume}BucketDeployment`, {
       sources: [Source.asset('./websites')],
       destinationBucket: cloudResumeBucket,
     });
@@ -72,7 +75,7 @@ export class CdkCloudResumeAwsStack extends CDK.Stack {
     cloudResumeTable.grantReadWriteData(pageVistIncrementHandler);
     cloudResumeTable.grantReadData(pageVistReadHandler);
 
-    const api = new LambdaRestApi(this, 'CloudResumeApi', {
+    const api = new LambdaRestApi(this, `${this.cloudResume}Api`, {
       handler: pageVistIncrementHandler,
       proxy: false,
     });
@@ -83,6 +86,11 @@ export class CdkCloudResumeAwsStack extends CDK.Stack {
     count.addCorsPreflight({
       allowOrigins: ['*'],
       allowMethods: ['GET'],
+    });
+
+    new Secret(this, `${this.cloudResume}ApiSecret`, {
+      secretName: `${this.cloudResume}ApiId`,
+      secretStringValue: new SecretValue(api.restApiId),
     });
   }
 }
