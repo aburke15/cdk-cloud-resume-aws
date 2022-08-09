@@ -1,9 +1,11 @@
 import * as CDK from 'aws-cdk-lib';
-import { SecretValue } from 'aws-cdk-lib';
 import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
+import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import * as DDB from 'aws-cdk-lib/aws-dynamodb';
 import { Code, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { ARecord, PublicHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
+import { ApiGateway } from 'aws-cdk-lib/aws-route53-targets';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
@@ -24,6 +26,8 @@ export class CdkCloudResumeAwsStack extends CDK.Stack {
   private readonly directory: string = 'lambda';
   private readonly handler: string = 'handler';
   private readonly cloudResume: string = 'CloudResume';
+  private readonly domainName: string = 'aburke.tech';
+  private readonly cloud: string = 'cloud';
 
   constructor(scope: Construct, id: string, props?: CDK.StackProps) {
     super(scope, id, props);
@@ -88,9 +92,29 @@ export class CdkCloudResumeAwsStack extends CDK.Stack {
       allowMethods: ['GET'],
     });
 
-    new Secret(this, `${this.cloudResume}ApiIdSecret`, {
-      secretName: `${this.cloudResume}ApiId`,
-      secretStringValue: new SecretValue(api.restApiId),
+    // get secrets for hosted zone and certificate
+    const zoneSecret = Secret.fromSecretNameV2(this, `AburkeTechHostedZoneIdSecret`, `AburkeTechHostedZoneId`);
+    const certSecret = Secret.fromSecretNameV2(this, `AburkeTechCertificateArnSecret`, `AburkeTechCertificateArn`);
+
+    const zoneId: string = zoneSecret?.secretValue?.unsafeUnwrap()?.toString();
+    const certArn: string = certSecret?.secretValue?.unsafeUnwrap()?.toString();
+
+    const aburkeTechCert = Certificate.fromCertificateArn(this, `AburkeTechCertificate`, certArn);
+
+    const aburkeTechZone = PublicHostedZone.fromPublicHostedZoneAttributes(this, `AburkeTechPublicHostedZone`, {
+      hostedZoneId: zoneId,
+      zoneName: this.domainName,
+    });
+
+    api.addDomainName(`${this.cloudResume}ApiDomain`, {
+      domainName: `${this.cloud}.${this.domainName}`,
+      certificate: aburkeTechCert,
+    });
+
+    new ARecord(this, `${this.cloudResume}ARecord`, {
+      zone: aburkeTechZone,
+      target: RecordTarget.fromAlias(new ApiGateway(api)),
+      recordName: this.cloud,
     });
   }
 }

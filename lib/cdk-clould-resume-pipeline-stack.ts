@@ -1,6 +1,7 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines';
 import { Construct } from 'constructs';
+import { CdkCloudResumePipelineStage } from './cdk-cloud-resume-pipeline-stage';
 
 export class CdkCloudResumePipelineStack extends Stack {
   private readonly cloudResumePipeline: string = 'CloudResumePipeline';
@@ -14,5 +15,7 @@ export class CdkCloudResumePipelineStack extends Stack {
         commands: ['npm ci', 'npm run build', 'npx cdk synth'],
       }),
     });
+
+    cloudResumePipeline.addStage(new CdkCloudResumePipelineStage(this, `${this.cloudResumePipeline}Stage`));
   }
 }
