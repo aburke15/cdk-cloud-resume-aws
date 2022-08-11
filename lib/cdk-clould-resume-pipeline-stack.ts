@@ -8,7 +8,7 @@ export class CdkCloudResumePipelineStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const cloudResumePipeline: CodePipeline = new CodePipeline(this, this.cloudResumePipeline, {
+    const pipeline: CodePipeline = new CodePipeline(this, this.cloudResumePipeline, {
       pipelineName: this.cloudResumePipeline,
       synth: new ShellStep('Synth', {
         input: CodePipelineSource.gitHub('aburke15/cdk-cloud-resume-aws', 'main'),
@@ -16,6 +16,6 @@ export class CdkCloudResumePipelineStack extends Stack {
       }),
     });
 
-    cloudResumePipeline.addStage(new CdkCloudResumePipelineStage(this, `${this.cloudResumePipeline}Stage`));
+    pipeline.addStage(new CdkCloudResumePipelineStage(this, `${this.cloudResumePipeline}Stage`));
   }
 }

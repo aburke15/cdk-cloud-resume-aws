@@ -1,6 +1,6 @@
 import * as AWS from 'aws-sdk';
 import { APIGatewayEvent } from 'aws-lambda';
-import * as Response from '../lib/common/responses';
+import { PageVisitCountResponse, FunctionResponse } from '../lib/common/responses';
 
 const apiVersion = { apiVersion: '2012-08-10' };
 let ddb = new AWS.DynamoDB(apiVersion);
@@ -19,7 +19,7 @@ exports.handler = async (event: APIGatewayEvent) => {
     }
 
     const result = await readFromDynamoDB(ddb);
-    const response: Response.PageVisitCountResponse = { count: 0 };
+    const response: PageVisitCountResponse = { count: 0 };
 
     result?.Items?.forEach((item) => {
       response.count = parseInt(item.visit_count.N ?? '1');
@@ -29,7 +29,7 @@ exports.handler = async (event: APIGatewayEvent) => {
       statusCode: 200,
       headers: { 'Content-Type': 'text/plain' },
       body: response,
-    } as Response.FunctionResponse<Response.PageVisitCountResponse>;
+    } as FunctionResponse<PageVisitCountResponse>;
   } catch (error) {
     console.log(error);
     throw error;
