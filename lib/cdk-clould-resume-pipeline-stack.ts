@@ -15,6 +15,7 @@ export class CdkCloudResumePipelineStack extends Stack {
         input: CodePipelineSource.gitHub('aburke15/cdk-cloud-resume-aws', 'main'),
         commands: ['npm ci', 'npm run build', 'npx cdk synth'],
       }),
+      dockerEnabledForSynth: true,
     });
 
     pipeline.addStage(new CdkCloudResumePipelineStage(this, `${this.cloudResumePipeline}Stage`));
