@@ -5,6 +5,7 @@ import { CdkCloudResumePipelineStage } from './cdk-cloud-resume-pipeline-stage';
 
 export class CdkCloudResumePipelineStack extends Stack {
   private readonly cloudResumePipeline: string = 'CloudResumePipeline';
+
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
