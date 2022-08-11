@@ -2,7 +2,7 @@ import * as CDK from 'aws-cdk-lib';
 import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import * as DDB from 'aws-cdk-lib/aws-dynamodb';
-import { Code, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { Code, IFunction, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { ARecord, PublicHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
 import { ApiGateway } from 'aws-cdk-lib/aws-route53-targets';
@@ -50,11 +50,11 @@ export class CdkCloudResumeAwsStack extends CDK.Stack {
       destinationBucket: cloudResumeBucket,
     });
 
-    const pageVistReadHandler = new NodejsFunction(this, 'PageVisitReadHandler', {
+    const readFunction: IFunction = new NodejsFunction(this, 'PageVisitCountReadFunction', {
       runtime: Runtime.NODEJS_14_X,
       memorySize: memoryAndTimeout.memorySize,
       timeout: memoryAndTimeout.timeout,
-      entry: Code.fromAsset(this.directory).path + '/page-visit-read-handler.ts',
+      entry: Code.fromAsset(this.directory).path + '/page-visit-count-read-function.ts',
       handler: this.handler,
       bundling,
       environment: {
@@ -62,25 +62,25 @@ export class CdkCloudResumeAwsStack extends CDK.Stack {
       },
     });
 
-    const pageVistIncrementHandler = new NodejsFunction(this, 'PageVisitIncrementHandler', {
+    const incrementFunction: IFunction = new NodejsFunction(this, 'PageVisitCountIncrementFunction', {
       runtime: Runtime.NODEJS_14_X,
       memorySize: memoryAndTimeout.memorySize,
       timeout: memoryAndTimeout.timeout,
-      entry: Code.fromAsset(this.directory).path + '/page-visit-increment-handler.ts',
+      entry: Code.fromAsset(this.directory).path + '/page-visit-count-increment-function.ts',
       handler: this.handler,
       bundling,
       environment: {
         TABLE_NAME: cloudResumeTable.tableName,
-        DOWNSTREAM: pageVistReadHandler.functionName,
+        DOWNSTREAM: readFunction.functionName,
       },
     });
 
-    pageVistReadHandler.grantInvoke(pageVistIncrementHandler);
-    cloudResumeTable.grantReadWriteData(pageVistIncrementHandler);
-    cloudResumeTable.grantReadData(pageVistReadHandler);
+    readFunction.grantInvoke(incrementFunction);
+    cloudResumeTable.grantReadWriteData(incrementFunction);
+    cloudResumeTable.grantReadData(readFunction);
 
     const api = new LambdaRestApi(this, `${this.cloudResume}Api`, {
-      handler: pageVistIncrementHandler,
+      handler: incrementFunction,
       proxy: false,
     });
 
